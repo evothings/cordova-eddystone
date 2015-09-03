@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin xmlns="http://cordova.apache.org/ns/plugins/1.0"
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	id="com.evothings.eddystone"
+	version="1.0.0">
+
+	<name>Eddystone</name>
+	<description>Cordova/PhoneGap plugin for Eddystone beacons.</description>
+	<license>Apache 2.0</license>
+	<keywords>Eddystone, Beacons</keywords>
+
+	<js-module src="js/eddystone-plugin.js" name="eddystoneplugin">
+		<clobbers target="evothings.eddystone" />
+	</js-module>
+
+	<dependency id="com.evothings.ble" url="https://github.com/evothings/cordova-ble" />
+</plugin>
