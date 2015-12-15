@@ -6,6 +6,8 @@
 // Global holding everything.
 window.evothings = window.evothings || {};
 
-// Async script loading replaced by building a single merged file.
-evothings.loadScript = function() {};
-evothings.loadScripts = function() {};
+// Define an empty No Operation function. This function is called
+// in place of async script loading, since we build a single merged file.
+// See the build script buildEddystonePlauginJS.rb which is where
+// async loading gets replaced by this function.
+evothings.__NOOP_FUN__ = function() {};
