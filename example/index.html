@@ -123,7 +123,7 @@
 			{
 				// Only show beacons updated during the last 60 seconds.
 				var beacon = beacons[key];
-				if (beacon.timeStamp - 60000 > timeNow)
+				if (beacon.timeStamp + 60000 < timeNow)
 				{
 					delete beacons[key];
 				}
