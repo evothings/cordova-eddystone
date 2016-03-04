@@ -36,7 +36,7 @@ end
 def mergeFiles
 	# Base path for JS files is the evothings-examples repo, which
 	# should be checked out next to this repo when building.
-	libsPath = "../evothings-examples/resources/libs/evothings/"
+	libsPath = "../evothings-libraries/libs/evothings/"
 
 	# Paths to JS files.
 	utiljs = fileRead(libsPath + "util/util.js")
