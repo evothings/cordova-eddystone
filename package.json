@@ -1,6 +1,6 @@
 {
   "name": "cordova-plugin-eddystone",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "description": "Cordova/PhoneGap plugin for Eddystone beacons.",
   "cordova": {
     "id": "cordova-plugin-eddystone",
