@@ -400,33 +400,72 @@ evothings.util = {};
 
 	/**
 	 * Start scanning for devices.
+	 * @param {array} serviceUUIDs - Array with service UUID strings (optional).
+	 * On iOS multiple UUIDs are scanned for using logical OR operator,
+	 * any UUID that matches any of the UUIDs adverticed by the device
+	 * will count as a match. On Android, multiple UUIDs are scanned for
+	 * using AND logic, the device must advertise all of the given UUIDs
+	 * to produce a match. (The matching logic will be unified in future
+	 * versions of the plugin.) When providing one service UUID, behaviour
+	 * is the same on Android and iOS. Learning out this parameter or
+	 * setting it to null, will scan for all devices, regardless of
+	 * advertised services.
 	 * @param {evothings.easyble.scanCallback} - Success function called when a
 	 * device is found.
 	 * Format: success({@link evothings.easyble.EasyBLEDevice}).
 	 * @param {evothings.easyble.failCallback} fail - Error callback: fail(error).
 	 * @public
 	 * @example
+	 *   // Scan for all services.
 	 *   evothings.easyble.startScan(
-	 *     function(device)
-	 *     {
-	 *       console.log('BLE Found device: ' + device.name);
-	 *     },
-	 *     function(error)
-	 *     {
-	 *       console.log('BLE Scan error: ' + error);
-	 *     });
+	 *       function(device)
+	 *       {
+	 *           console.log('Found device named: ' + device.name);
+	 *       },
+	 *       function(errorCode)
+	 *       {
+	 *           console.log('startScan error: ' + errorCode);
+	 *       }
+	 *   );
+	 *
+	 *   // Scan for specific service.
+	 *   evothings.easyble.startScan(
+	 *       // Eddystone service UUID.
+	 *       ['0000FEAA-0000-1000-8000-00805F9B34FB'],
+	 *       function(device)
+	 *       {
+	 *           console.log('Found device named: ' + device.name);
+	 *       },
+	 *       function(errorCode)
+	 *       {
+	 *           console.log('startScan error: ' + errorCode);
+	 *       }
+	 *   );
 	 */
-	evothings.easyble.startScan = function(success, fail)
+	evothings.easyble.startScan = function(serviceUUIDs, success, fail)
 	{
 		evothings.easyble.stopScan();
+
 		internal.knownDevices = {};
-		evothings.ble.startScan(function(device)
+
+		if ('function' == typeof uuids)
+		{
+			// No Service UUIDs specified.
+			evothings.ble.startScan(onDeviceFound, onError);
+		}
+		else
+		{
+			evothings.ble.startScan(serviceUUIDs, onDeviceFound, onError);
+		}
+
+		function onDeviceFound(device)
 		{
 			// Ensure we have advertisementData.
 			internal.ensureAdvertisementData(device);
 
 			// Check if the device matches the filter, if we have a filter.
-			if(!internal.deviceMatchesServiceFilter(device)) {
+			if (!internal.deviceMatchesServiceFilter(device))
+			{
 				return;
 			}
 
@@ -454,11 +493,12 @@ evothings.util = {};
 
 			// Call callback function with device info.
 			success(device);
-		},
-		function(errorCode)
+		}
+
+		function onError(errorCode)
 		{
 			fail(errorCode);
-		});
+		}
 	};
 
 	/**
@@ -686,15 +726,43 @@ evothings.util = {};
 	internal.addMethodsToDeviceObject = function(deviceObject)
 	{
 		/**
-		 * This is the BLE DeviceInfo object obtained by calling
-		 * evothings.ble.startScan, with additional properties and
-		 * functions added. Internal properties are prefixed with two
-		 * underscores. Properties are also added to the Characteristic
-		 * and Descriptor objects.
 		 * @namespace
 		 * @alias evothings.easyble.EasyBLEDevice
+		 * @description This is the BLE DeviceInfo object obtained from the
+		 * underlying Cordova plugin.
+		 * @property {string} address - Uniquely identifies the device.
+		 * The form of the address depends on the host platform.
+		 * @property {number} rssi - A negative integer, the signal strength in decibels.
+		 * @property {string} name - The device's name, or nil.
+		 * @property {string} scanRecord - Base64-encoded binary data. Its meaning is
+		 * device-specific. Not available on iOS.
+		 * @property {evothings.easyble.AdvertisementData} advertisementData -
+		 * Object containing some of the data from the scanRecord.
 		 */
 		var device = deviceObject;
+
+		/**
+		 * @typedef {Object} evothings.easyble.AdvertisementData
+		 * @description Information extracted from a scanRecord. Some or all of the fields may be
+		 * undefined. This varies between BLE devices.
+		 * Depending on OS version and BLE device, additional fields, not documented
+		 * here, may be present.
+		 * @property {string} kCBAdvDataLocalName - The device's name. Use this field
+		 * rather than device.name, since on iOS the device name is cached and changes
+		 * are not reflected in device.name.
+		 * @property {number} kCBAdvDataTxPowerLevel - Transmission power level as
+		 * advertised by the device.
+		 * @property {boolean} kCBAdvDataIsConnectable - True if the device accepts
+		 * connections. False if it doesn't.
+		 * @property {array} kCBAdvDataServiceUUIDs - Array of strings, the UUIDs of
+		 * services advertised by the device. Formatted according to RFC 4122,
+		 * all lowercase.
+		 * @property {object} kCBAdvDataServiceData - Dictionary of strings to strings.
+		 * The keys are service UUIDs. The values are base-64-encoded binary data.
+		 * @property {string} kCBAdvDataManufacturerData - Base-64-encoded binary data.
+		 * This field is used by BLE devices to advertise custom data that don't fit
+		 * into any of the other fields.
+		 */
 
 		/**
 		 * Match device name.
@@ -1407,15 +1475,8 @@ evothings.util = {};
 		evothings.ble.readDescriptor(
 			device.deviceHandle,
 			descriptor.handle,
-			value,
-			function()
-			{
-				success();
-			},
-			function(errorCode)
-			{
-				fail(errorCode);
-			});
+			success,
+			fail);
 	};
 
 	/**
@@ -1742,6 +1803,9 @@ evothings.eddystone.startScan = function(scanCallback, failCallback)
 	// Therefore we can store data in it and expect to have the data still be there
 	// on the next callback with the same device.
 	evothings.easyble.startScan(
+		// Scan for Eddystone Service UUID.
+		// This enables background scanning on iOS (and Android).
+		['0000FEAA-0000-1000-8000-00805F9B34FB'],
 		function(device)
 		{
 			// A device might be an Eddystone if it has advertisementData...
@@ -1788,7 +1852,6 @@ evothings.eddystone.startScan = function(scanCallback, failCallback)
  * Which properties are available depends on which packets types broadcasted
  * by the beacon. Properties may be undefined. Typically properties are populated
  * as scanning processes.
- * @alias evothings.eddystone.EddystoneDevice
  * @typedef {Object} evothings.eddystone.EddystoneDevice
  * @property {string} url - An Internet URL.
  * @property {number} txPower - A signed integer, the signal strength in decibels,
