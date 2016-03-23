@@ -41,7 +41,6 @@
 
 	<h1>Eddystone Demo</h1>
 
-
 	<p id="message">Preparing...</p>
 
 	<div id="found-beacons"></div>
@@ -70,6 +69,12 @@
 
 			// Timer that refreshes the display.
 			timer = setInterval(updateBeaconList, 500);
+		}
+
+		function onBackButtonDown()
+		{
+			evothings.eddystone.stopScan();
+			navigator.app.exitApp();
 		}
 
 		function startScan()
@@ -223,6 +228,9 @@
 
 		// This calls onDeviceReady when Cordova has loaded everything.
 		document.addEventListener('deviceready', onDeviceReady, false);
+
+		// Add back button listener (for Android).
+		document.addEventListener('backbutton', onBackButtonDown, false);
 
 	})(); // End of closure.
 	</script>
