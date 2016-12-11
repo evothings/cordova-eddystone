@@ -148,6 +148,7 @@
 					+	htmlBeaconURL(beacon)
 					+	htmlBeaconNID(beacon)
 					+	htmlBeaconBID(beacon)
+					+	htmlBeaconEID(beacon)
 					+	htmlBeaconVoltage(beacon)
 					+	htmlBeaconTemperature(beacon)
 					+	htmlBeaconRSSI(beacon)
@@ -185,6 +186,12 @@
 		{
 			return beacon.bid ?
 				'BID: ' + uint8ArrayToString(beacon.bid) + '<br/>' :  '';
+		}
+
+		function htmlBeaconEID(beacon)
+		{
+			return beacon.eid ?
+				'EID: ' + uint8ArrayToString(beacon.eid) + '<br/>' :  '';
 		}
 
 		function htmlBeaconVoltage(beacon)
